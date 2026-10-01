@@ -12,6 +12,9 @@ database — never from the model's memory.
 > medical device. It does not diagnose. All 5 doctors and 5 hospitals are
 > clearly fictional demo records.
 
+> 🔗 **Live demo:** <https://healtrip-ai.vercel.app> — both services run in one
+> Vercel project (Next.js + FastAPI, see §15).
+
 ---
 
 ## 1. Project Overview
