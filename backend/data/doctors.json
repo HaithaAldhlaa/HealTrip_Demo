@@ -1,0 +1,62 @@
+[
+  {
+    "id": "d1",
+    "name": "Dr. Ahmed Salem",
+    "name_ar": "د. أحمد سالم",
+    "specialty": "Cardiology",
+    "city": "Riyadh",
+    "hospital_id": "h1",
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  },
+  {
+    "id": "d2",
+    "name": "Dr. Laila Haddad",
+    "name_ar": "د. ليلى حداد",
+    "specialty": "Emergency Medicine",
+    "city": "Riyadh",
+    "hospital_id": "h1",
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  },
+  {
+    "id": "d3",
+    "name": "Dr. Omar Khalid",
+    "name_ar": "د. عمر خالد",
+    "specialty": "Orthopedics",
+    "city": "Jeddah",
+    "hospital_id": "h2",
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  },
+  {
+    "id": "d4",
+    "name": "Dr. Sara Al Mutairi",
+    "name_ar": "د. سارة المطيري",
+    "specialty": "Pediatrics",
+    "city": "Dammam",
+    "hospital_id": "h3",
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  },
+  {
+    "id": "d5",
+    "name": "Dr. Youssef Nabil",
+    "name_ar": "د. يوسف نبيل",
+    "specialty": "Neurology",
+    "city": "Riyadh",
+    "hospital_id": "h4",
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  }
+]

@@ -1,0 +1,83 @@
+[
+  {
+    "id": "h1",
+    "name": "Al-Noor Demo Hospital",
+    "name_ar": "مستشفى النور التوضيحي",
+    "city": "Riyadh",
+    "address": "Olaya District",
+    "specialties": [
+      "Cardiology",
+      "Emergency Medicine"
+    ],
+    "emergency_available": true,
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  },
+  {
+    "id": "h2",
+    "name": "Red Sea Demo Hospital",
+    "name_ar": "مستشفى البحر الأحمر التوضيحي",
+    "city": "Jeddah",
+    "address": "Al Hamra District",
+    "specialties": [
+      "Emergency Medicine",
+      "Orthopedics"
+    ],
+    "emergency_available": true,
+    "languages": [
+      "Arabic",
+      "English",
+      "Urdu"
+    ]
+  },
+  {
+    "id": "h3",
+    "name": "Gulf Demo Medical Center",
+    "name_ar": "مركز الخليج الطبي التوضيحي",
+    "city": "Dammam",
+    "address": "Al Faisaliyah District",
+    "specialties": [
+      "Pediatrics",
+      "Dermatology"
+    ],
+    "emergency_available": false,
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  },
+  {
+    "id": "h4",
+    "name": "Capital Demo Hospital",
+    "name_ar": "مستشفى العاصمة التوضيحي",
+    "city": "Riyadh",
+    "address": "Al Malqa District",
+    "specialties": [
+      "Neurology",
+      "Cardiology"
+    ],
+    "emergency_available": true,
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  },
+  {
+    "id": "h5",
+    "name": "Palm Demo Hospital",
+    "name_ar": "مستشفى النخيل التوضيحي",
+    "city": "Jeddah",
+    "address": "Al Rawdah District",
+    "specialties": [
+      "Dermatology",
+      "Pediatrics"
+    ],
+    "emergency_available": false,
+    "languages": [
+      "Arabic",
+      "English"
+    ]
+  }
+]
