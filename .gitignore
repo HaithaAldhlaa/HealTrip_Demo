@@ -14,8 +14,8 @@ next-env.d.ts
 
 # Secrets - never commit
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 *.pem
 *.key
 
@@ -30,3 +30,4 @@ next-env.d.ts
 # OS
 .DS_Store
 Thumbs.db
+
