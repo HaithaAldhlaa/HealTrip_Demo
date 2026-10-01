@@ -389,7 +389,7 @@ detection, and the hallucination guard in both scripts.
 | `LLM_TIMEOUT_SECONDS` | backend | `45` | Upstream timeout. |
 | `MAX_TOOL_ROUNDS` | backend | `5` | Tool-calling loop cap. |
 | `CORS_ORIGINS` | backend | `http://localhost:3000` | Comma-separated, local dev only. |
-| `BACKEND_URL` | frontend (server) | `http://127.0.0.1:8000` | Backend base URL for the route handler. |
+| `BACKEND_URL` | frontend (server) | `http://127.0.0.1:8000` | Backend base URL for the route handler. On Vercel this is injected by the service binding — do not set it. |
 | `NEXT_PUBLIC_APP_LANG` | – | – | Not used; the UI language is a client-side toggle. |
 
 `.env.example` is committed; `.env` is not.
@@ -398,29 +398,57 @@ detection, and the hallucination guard in both scripts.
 
 ## 15. Vercel Deployment
 
-The frontend is a standard Next.js app; the FastAPI service is a normal Python
-process (Vercel functions are not a good fit for a stateful chat loop), so the
-demo is deployed as **Vercel (frontend) + any Python host (backend)**.
+Both services deploy to **one Vercel project** using Vercel Services (each
+framework is detected per service, built independently, and routed from a shared
+domain). The whole deployment is described by the committed `vercel.json`:
 
-1. **Deploy the backend** (Render, Railway, Fly.io, or a small VM):
+```json
+{
+  "services": {
+    "frontend": {
+      "root": "frontend/",
+      "framework": "nextjs",
+      "bindings": [
+        { "type": "service", "service": "backend", "format": "url", "env": "BACKEND_URL" }
+      ]
+    },
+    "backend": { "root": "backend/", "framework": "fastapi", "entrypoint": "main:app" }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": { "service": "frontend" } }]
+}
+```
 
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   uvicorn main:app --host 0.0.0.0 --port $PORT
-   ```
+What this means in practice:
 
-   Build command `pip install -r requirements.txt`, start command
-   `uvicorn main:app --host 0.0.0.0 --port $PORT`, health check path `/health`.
-   Set `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL` (and `LLM_BASE_URL` if needed)
-   as secrets in that host's dashboard. Set `CORS_ORIGINS` to your Vercel domain
-   (not strictly required, the browser only calls the Next.js origin).
+- `backend/` builds on the Vercel **Python runtime** (Fluid compute) and exposes
+  the `app` object from `backend/main.py`. `doctors.json` / `hospitals.json` ship
+  inside the function bundle and are read-only at runtime.
+- `frontend/` builds as **Next.js**. Every public request goes to the frontend
+  service, so the browser-facing `/api/chat` proxy stays exactly as it is locally.
+- The **service binding** injects the backend's internal URL into the frontend as
+  `BACKEND_URL`. The Next.js route handler already reads `process.env.BACKEND_URL`,
+  so no application code changed for the deployment — the call travels over
+  Vercel's internal network instead of the public internet, and the backend stays
+  **not publicly routable**.
+- **Do not set `BACKEND_URL` as a project environment variable.** The binding
+  provides it; a manual value would override the internal URL.
 
-2. **Deploy the frontend to Vercel**: import the repository, set **Root
-   Directory = `frontend`**, Framework Preset = Next.js. Environment variable:
-   `BACKEND_URL=https://<your-backend-domain>`.
+Steps:
 
-3. No Docker, no containers, no database, no other infrastructure.
+1. Import the repository at vercel.com/new (Root Directory = repository root, so
+   `vercel.json` is picked up).
+2. Add environment variables in Project Settings (they apply to both services):
+   `LLM_PROVIDER`, `LLM_API_KEY` (secret), `LLM_MODEL`. Everything else already
+   has safe defaults. `CORS_ORIGINS` is not required here because the browser
+   only ever calls the Next.js origin.
+3. Deploy, then verify with `GET /` (UI) and `POST /api/chat`
+   (frontend → binding → FastAPI → LLM provider).
+
+Local parity: `vercel dev -L` runs both services with the same routing and the
+same injected binding, which is how the frontend↔backend handshake was verified
+before deploying.
+
+No Docker, no containers, no second provider, no database.
 
 ---
 
@@ -466,6 +494,7 @@ healtrip-ai/
 │   ├── data/{doctors,hospitals}.json   # 5 + 5 fictional records
 │   └── tests/test_prototype.py    # 27 offline tests
 ├── .env.example
+├── vercel.json                   # one Vercel project: Next.js service + FastAPI service + binding
 ├── README.md
 └── README.ar.md
 ```

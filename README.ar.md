@@ -368,7 +368,7 @@ cd frontend && npm run typecheck && npm run build
 | `LLM_TIMEOUT_SECONDS` | backend | `45` | مهلة الاتصال بالمزوّد. |
 | `MAX_TOOL_ROUNDS` | backend | `5` | سقف حلقة استدعاء الأدوات. |
 | `CORS_ORIGINS` | backend | `http://localhost:3000` | قائمة مفصولة بفواصل، للتطوير المحلي فقط. |
-| `BACKEND_URL` | frontend (خادم) | `http://127.0.0.1:8000` | عنوان الـ backend لمعالج المسار. |
+| `BACKEND_URL` | frontend (خادم) | `http://127.0.0.1:8000` | عنوان الـ backend الذي يستخدمه معالج المسار. على Vercel يُحقنه service binding تلقائيًا — لا تضبطه يدويًا. |
 
 ملف `.env.example` مُودَع في المستودع، و `.env` غير مُودَع.
 
@@ -376,28 +376,55 @@ cd frontend && npm run typecheck && npm run build
 
 ## 15. النشر على Vercel
 
-الواجهة تطبيق Next.js اعتيادي؛ أما FastAPI فهي عملية Python عادية (دوال Vercel
-قصيرة العمر ليست مناسبة لحلقة محادثة)، لذلك يُنشر النموذج كـ **Vercel للواجهة + أي
-استضافة Python للـ backend**.
+تُنشر الخدمتان معًا في **مشروع Vercel واحد** عبر Vercel Services (يكتشف كل
+إطار عمل داخل خدمته، وتُبنى كل خدمة بشكل مستقل، ويتقاسمان نطاقًا واحدًا).
+وكل النشر موصوف في ملف `vercel.json` المُودَع:
 
-1. **انشر الـ backend** (Render أو Railway أو Fly.io أو VM صغيرة):
+```json
+{
+  "services": {
+    "frontend": {
+      "root": "frontend/",
+      "framework": "nextjs",
+      "bindings": [
+        { "type": "service", "service": "backend", "format": "url", "env": "BACKEND_URL" }
+      ]
+    },
+    "backend": { "root": "backend/", "framework": "fastapi", "entrypoint": "main:app" }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": { "service": "frontend" } }]
+}
+```
 
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   uvicorn main:app --host 0.0.0.0 --port $PORT
-   ```
+ماذا يعني هذا عمليًا:
 
-   أمر البناء: `pip install -r requirements.txt`، أمر التشغيل:
-   `uvicorn main:app --host 0.0.0.0 --port $PORT`، وفحص الصحة: `/health`.
-   اضبط `LLM_PROVIDER` و `LLM_API_KEY` و `LLM_MODEL` (و `LLM_BASE_URL` عند الحاجة)
-   كـ secrets في لوحة الاستضافة، و `CORS_ORIGINS` إلى نطاق Vercel.
+- `backend/` يُبنى على **Python runtime** في Vercel (Fluid compute) ويُصدّر الكائن
+  `app` من `backend/main.py`. ويُضمَّن `doctors.json` و `hospitals.json` داخل حزمة
+  الدالة ويُقرآن للقراءة فقط أثناء التشغيل.
+- `frontend/` يُبنى كـ **Next.js**. كل الطلبات العامة تذهب إلى خدمة الواجهة، فيبقى
+  مسار `/api/chat` الذي ي talking إليه المتصفح مطابقًا تمامًا للوضع المحلي.
+- **service binding** يحقن عنوان الـ backend الداخلي في الواجهة باسم
+  `BACKEND_URL`. معالج المسار في Next.js يقرأ `process.env.BACKEND_URL` أصلًا،
+  لذلك **لم يتغيّر أي سطر في كود التطبيق** للنشر — الطلب يمر عبر الشبكة الداخلية
+  في Vercel بدل الإنترنت العام، والـ backend **غير متاح للعامة**.
+- **لا تضبط `BACKEND_URL` كمتغيّر بيئة في المشروع**: الـ binding هو من يوفّره،
+  وأي قيمة يدوية ستتغلّب على العنوان الداخلي.
 
-2. **انشر الواجهة على Vercel**: استورد المستودع، واجعل **Root Directory =
-   `frontend`**، وFramework Preset = Next.js. متغيّر بيئة واحد:
-   `BACKEND_URL=https://<نطاق-الـ-backend>`.
+الخطوات:
 
-3. بلا Docker ولا حاويات ولا قاعدة بيانات ولا بنية تحتية إضافية.
+1. استورد المستودع من vercel.com/new (Root Directory = جذر المستودع ليُقرأ
+   `vercel.json`).
+2. أضف متغيّرات البيئة في Project Settings (تُطبَّق على الخدمتين):
+   `LLM_PROVIDER` و `LLM_API_KEY` (secret) و `LLM_MODEL`. ما عدا ذلك لديه قيم
+   افتراضية آمنة. و `CORS_ORIGINS` غير مطلوب هنا لأن المتصفح لا يتصل إلا بنطاق
+   Next.js.
+3. انشر، ثم تحقّق عبر `GET /` (الواجهة) و `POST /api/chat`
+   (الواجهة ← binding ← FastAPI ← مزوّد الـ LLM).
+
+مطابقة معرفية: الأمر `vercel dev -L` يشغّل الخدمتين بنفس التوجيهات ونفس الـ
+binding المحقون، وهكذا تم التحقق من تواصل الواجهة بالـ backend قبل النشر.
+
+بلا Docker ولا حاويات ولا مزوّد ثانٍ ولا قاعدة بيانات.
 
 ---
 
@@ -442,6 +469,7 @@ healtrip-ai/
 │   ├── data/{doctors,hospitals}.json   # 5 + 5 سجلات توضيحية
 │   └── tests/test_prototype.py    # 27 اختبارًا بدون اتصال
 ├── .env.example
+├── vercel.json                   # مشروع Vercel واحد: خدمة Next.js + خدمة FastAPI + binding
 ├── README.md
 └── README.ar.md
 ```
